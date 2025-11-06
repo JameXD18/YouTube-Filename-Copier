@@ -2,12 +2,12 @@
 function copyFilenameToTitle(isManualTrigger = false) { 
     
     // Safety check for iframes
-    if (window.self !== window.top) {
-        if (isManualTrigger) {
-            return { status: "failure", message: "Not the main frame." };
-        }
-        return false;
-    }
+    // if (window.self !== window.top) {
+    //     if (isManualTrigger) {
+    //         return { status: "failure", message: "Not the main frame." };
+    //     }
+    //     return false;
+    // }
     
     const filenameElement = document.getElementById('original-filename');
     const titleInput = document.querySelector('#textbox'); 

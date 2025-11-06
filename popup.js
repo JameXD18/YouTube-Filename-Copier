@@ -26,14 +26,14 @@ document.getElementById('copyButton').addEventListener('click', () => {
                     return;
                 }
 
-                if (response && response.status === "success") {
-                    alert(`Title successfully updated/checked.`);
-                } else if (response && response.status === "failure") {
-                     alert(`Update failed: ${response.message}`);
-                } else {
-                     // Fallback for silent success/fail
-                     alert("Title update sent. Please check the video title field.");
-                }
+                // if (response && response.status === "success") {
+                //     alert(`Title successfully updated/checked.`);
+                // } else if (response && response.status === "failure") {
+                //      alert(`Update failed: ${response.message}`);
+                // } else {
+                //      // Fallback for silent success/fail
+                //      alert("Title update sent. Please check the video title field.");
+                // }
             });
         });
     });
