@@ -1,69 +1,90 @@
-// Function to clean the filename and insert it into the title field
-function copyFilenameToTitle() {
+// Function that performs the core action of cleaning and writing the title
+function copyFilenameToTitle(isManualTrigger = false) { 
     
-    // Check if we are running in the top-level window (to prevent running multiple times in iframes)
+    // Safety check for iframes
     if (window.self !== window.top) {
+        if (isManualTrigger) {
+            return { status: "failure", message: "Not the main frame." };
+        }
         return false;
     }
     
     const filenameElement = document.getElementById('original-filename');
     const titleInput = document.querySelector('#textbox'); 
 
-    if (filenameElement && titleInput) {
-        
-        // Check for common placeholders to prevent overwriting user input
-        if (titleInput.textContent.trim().length > 100) {
-             console.log('[Filename Copier SKIP] Title already has a long value.');
-             return true;
-        }
-        
-        // --- EXECUTION LOGIC ---
-        let rawFilename = filenameElement.textContent;
-
-        // **MODIFIED:** ONLY remove the file extension.
-        let cleanFilename = rawFilename
-            .trim()
-            .replace(/\.[^/.]+$/, ""); // Removes .mp4, .mov, etc.
-
-        // Simulate user interaction before writing
-        titleInput.focus();
-        
-        // Insert the clean filename
-        titleInput.textContent = cleanFilename;
-
-        // Trigger a blur event to finalize the input
-        titleInput.blur(); 
-        
-        // CRUCIAL: Dispatch an input event
-        titleInput.dispatchEvent(new Event('input', { bubbles: true }));
-
-        console.log(`[Filename Copier SUCCESS] Filename copied: ${cleanFilename}`);
-        return true; 
+    if (!filenameElement || !titleInput) {
+        // In polling mode, return false to continue checking
+        return false;
     }
     
-    return false;
+    // --- EXECUTION LOGIC ---
+    let rawFilename = filenameElement.textContent;
+    let cleanFilename = rawFilename
+        .trim()
+        .replace(/\.[^/.]+$/, ""); // Only removes the file extension
+
+    // *** CRITICAL CHANGE: Removed the conditional check here. ***
+    // The script will now always overwrite the title if the elements are found.
+
+    // Simulate user interaction
+    titleInput.focus();
+    titleInput.textContent = cleanFilename;
+    titleInput.blur(); 
+    
+    // Dispatch an input event
+    titleInput.dispatchEvent(new Event('input', { bubbles: true }));
+
+    console.log(`[Filename Copier SUCCESS] Filename copied: ${cleanFilename}`);
+    return { status: "success", newTitle: cleanFilename }; 
 }
 
-// --- Polling Logic ---
+// ----------------------------------------------------------------------
+// AUTOMATIC MODE: Polling for New Video Uploads
+// ----------------------------------------------------------------------
+
 let checkCount = 0;
 const maxChecks = 25; // 25 seconds max wait
 const intervalTime = 1000; 
 
 const intervalId = setInterval(() => {
     
-    if (checkCount === 0) {
-        console.log('[Filename Copier] Content Script is running. Polling started.');
+    const isEditPage = window.location.href.startsWith('https://studio.youtube.com/video/');
+
+    if (checkCount === 0 && !isEditPage) {
+        console.log('[Filename Copier] Automatic Polling started.');
     }
     
-    const success = copyFilenameToTitle();
-    
-    if (success || checkCount >= maxChecks) {
+    // If we detect we are on an existing edit page, stop the automatic polling
+    if (isEditPage && checkCount > 0) {
         clearInterval(intervalId);
-        if (!success) {
-            console.error('[Filename Copier ERROR] Timed out. Elements not found.');
+        return;
+    }
+    
+    // Call copyFilenameToTitle with isManualTrigger = false
+    const result = copyFilenameToTitle(false);
+    
+    if (result && result.status === 'success' || checkCount >= maxChecks) {
+        clearInterval(intervalId);
+        if (checkCount >= maxChecks) {
+             console.error('[Filename Copier ERROR] Timed out. Automatic update failed.');
         }
     }
 
     checkCount++;
     
 }, intervalTime);
+
+
+// ----------------------------------------------------------------------
+// MANUAL MODE: Listener for button press
+// ----------------------------------------------------------------------
+chrome.runtime.onMessage.addListener(
+    function(request, sender, sendResponse) {
+        if (request.action === "MANUAL_COPY") {
+            // Run copyFilenameToTitle with isManualTrigger = true
+            const result = copyFilenameToTitle(true); 
+            sendResponse(result); 
+        }
+        return true; 
+    }
+);
