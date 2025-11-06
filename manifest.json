@@ -1,0 +1,29 @@
+{
+  "manifest_version": 3,
+  "name": "YouTube Filename Copier",
+  "version": "1.0",
+  "description": "Copies the original uploaded filename to the video title field in YouTube Studio.",
+  "icons": {
+    "16": "icon-16.png"
+  },
+  "permissions": [
+    "tabs",
+    "scripting"
+  ],
+  "host_permissions": [
+    "https://studio.youtube.com/*"
+  ],
+  "action": {
+    "default_popup": "popup.html"
+  },
+  "background": {
+    "service_worker": "background.js" 
+  },
+  "content_scripts": [
+    {
+      "matches": ["https://studio.youtube.com/*"],
+      "js": ["content.js"],
+      "all_frames": true
+    }
+  ]
+}
